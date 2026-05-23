@@ -106,6 +106,27 @@
 
   #room.lit { opacity: 1; }
 
+  #connections {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+    mix-blend-mode: screen;
+  }
+
+  .connection {
+    fill: none;
+    stroke: var(--candle);
+    stroke-width: 0.8;
+    stroke-linecap: round;
+    opacity: 0;
+    transition: opacity 1.6s ease;
+  }
+
+  .connection.show { opacity: 0.32; }
+
   #cursor-light {
     position: fixed;
     width: 360px;
@@ -205,6 +226,22 @@
 
   .candle.near .candle-glow { opacity: 1; transform: translate(-50%, -50%) scale(1.18); }
   .candle.near .candle-want { opacity: 1; }
+
+  .candle-kindred {
+    display: none;
+    margin-top: 0.5rem;
+    font-size: 0.78rem;
+    font-style: italic;
+    color: var(--candle);
+    letter-spacing: 0.06em;
+    opacity: 0.78;
+    user-select: none;
+  }
+
+  .candle.kindred .candle-kindred { display: block; }
+  .candle.kindred .candle-glow {
+    background: radial-gradient(circle, rgba(255, 200, 130, 0.28) 0%, rgba(255, 176, 96, 0.08) 35%, transparent 65%);
+  }
 
   .candle-heard {
     display: block;
@@ -405,6 +442,7 @@
   <div class="corner top-left">Ghostbook</div>
   <div class="corner top-right">invite only</div>
 
+  <svg id="connections"></svg>
   <div id="cursor-light"></div>
   <div id="cursor-flame"></div>
   <div id="candles"></div>
@@ -423,7 +461,7 @@
 
 <div id="vault">
   <div id="vault-inner">
-    <p>your candle is here.</p>
+    <p>your candle is here, set down among the ones whose light most resembles your own.</p>
     <p>its words are sealed for a year. nobody can read them. not the platform, not the other ghosts, not your friends.</p>
     <p>in a year, they return <em>only to you</em>.</p>
     <p>then they're gone.</p>
@@ -433,18 +471,18 @@
 
 <script>
   const SEEDED = [
-    { x: 14, y: 28, want: "I want to leave my marriage. I don't know how to start the sentence." },
-    { x: 74, y: 20, want: "I want to be a mother. I'm 38. I've never said it out loud." },
-    { x: 44, y: 38, want: "I want to quit my job and learn to weld." },
-    { x: 22, y: 56, want: "I want my father to call me first. Just once." },
-    { x: 84, y: 42, want: "I want to write a book even though everyone I know would laugh." },
-    { x: 56, y: 60, want: "I want to be alone in a way that doesn't feel like failure." },
-    { x: 12, y: 78, want: "I want to fall in love again and not ruin it this time." },
-    { x: 88, y: 70, want: "I want to stop pretending I like what I do. I've been pretending eleven years." },
-    { x: 38, y: 82, want: "I want to forgive my mother. I don't actually want to." },
-    { x: 64, y: 80, want: "I want to live somewhere I can hear the ocean." },
-    { x: 32, y: 14, want: "I want to be touched without it meaning anything." },
-    { x: 70, y: 50, want: "I want to learn the names of every tree on my street." },
+    { id: 0, x: 16, y: 32, want: "I want to leave my marriage. I don't know how to start the sentence." },
+    { id: 1, x: 50, y: 30, want: "I want to be a mother. I'm 38. I've never said it out loud." },
+    { id: 2, x: 22, y: 12, want: "I want to quit my job and learn to weld." },
+    { id: 3, x: 14, y: 68, want: "I want my father to call me first. Just once." },
+    { id: 4, x: 62, y: 14, want: "I want to write a book even though everyone I know would laugh." },
+    { id: 5, x: 58, y: 48, want: "I want to be alone in a way that doesn't feel like failure." },
+    { id: 6, x: 80, y: 28, want: "I want to fall in love again and not ruin it this time." },
+    { id: 7, x: 10, y: 18, want: "I want to stop pretending I like what I do. I've been pretending eleven years." },
+    { id: 8, x: 28, y: 80, want: "I want to forgive my mother. I don't actually want to." },
+    { id: 9, x: 32, y: 24, want: "I want to live somewhere I can hear the ocean." },
+    { id: 10, x: 86, y: 50, want: "I want to be touched without it meaning anything." },
+    { id: 11, x: 70, y: 78, want: "I want to learn the names of every tree on my street." },
   ];
 
   const STORAGE_KEY = 'ghostbook.candles.v1';
@@ -507,20 +545,24 @@
     candlesEl.innerHTML = '';
     candles = [];
 
+    const mine = loadMine();
+    const kindredIds = new Set(mine.map(m => m.nearestId).filter(v => v != null));
+
     const all = [
-      ...SEEDED.map(c => ({ ...c, mine: false })),
-      ...loadMine(),
+      ...SEEDED.map(c => ({ ...c, mine: false, kindred: kindredIds.has(c.id) })),
+      ...mine.map(c => ({ ...c, mine: true })),
     ];
 
-    all.forEach((c, i) => {
+    all.forEach((c) => {
       const el = document.createElement('div');
-      el.className = 'candle' + (c.mine ? ' mine' : '');
+      el.className = 'candle' + (c.mine ? ' mine' : '') + (c.kindred ? ' kindred' : '');
       el.style.left = c.x + '%';
       el.style.top = c.y + '%';
+      if (c.id != null) el.dataset.id = c.id;
       el.innerHTML = `
         <div class="candle-glow"></div>
         <div class="candle-flame"></div>
-        <div class="candle-want">${escapeHtml(c.want)}<span class="candle-heard">I heard you</span></div>
+        <div class="candle-want">${escapeHtml(c.want)}<span class="candle-kindred">another ghost wanted this too</span><span class="candle-heard">I heard you</span></div>
       `;
       candlesEl.appendChild(el);
 
@@ -531,7 +573,7 @@
         heard.textContent = el.classList.contains('heard') ? 'heard' : 'I heard you';
       });
 
-      candles.push({ el, x: c.x, y: c.y, mine: !!c.mine });
+      candles.push({ el, x: c.x, y: c.y, id: c.id, mine: !!c.mine });
     });
 
     updateProximity(window.innerWidth / 2, window.innerHeight / 2);
@@ -597,16 +639,48 @@
 
   cancelBtn.addEventListener('click', closeConfession);
 
-  confessBtn.addEventListener('click', () => {
+  confessBtn.addEventListener('click', async () => {
     const text = confessionField.value.trim();
     if (!text) return;
+    confessBtn.disabled = true;
+    confessBtn.textContent = 'placing your candle…';
+
+    let placement;
+    try {
+      const r = await fetch('/api/embed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      });
+      if (!r.ok) throw new Error('embed failed');
+      placement = await r.json();
+    } catch {
+      const pos = pickEmptySpot();
+      placement = { x: pos.x, y: pos.y, nearest: [] };
+    }
+
     const mine = loadMine();
-    const pos = pickEmptySpot();
-    mine.push({ x: pos.x, y: pos.y, want: text, mine: true });
+    const nearestId = placement.nearest && placement.nearest.length ? placement.nearest[0].id : null;
+    mine.push({
+      x: placement.x,
+      y: placement.y,
+      want: text,
+      mine: true,
+      nearestId,
+    });
     saveMine(mine);
     closeConfession();
+    confessBtn.disabled = false;
+    confessBtn.textContent = 'light my candle';
     buildRoom();
-    setTimeout(openVault, 500);
+
+    if (nearestId != null) {
+      const nearestSeed = SEEDED.find(s => s.id === nearestId);
+      if (nearestSeed) {
+        setTimeout(() => drawConnection(placement.x, placement.y, nearestSeed.x, nearestSeed.y), 250);
+      }
+    }
+    setTimeout(openVault, 1400);
   });
 
   function pickEmptySpot() {
@@ -620,6 +694,24 @@
       if (bestMin > 18) break;
     }
     return best;
+  }
+
+  const connectionsSvg = document.getElementById('connections');
+
+  function drawConnection(fx, fy, tx, ty) {
+    const w = window.innerWidth, h = window.innerHeight;
+    connectionsSvg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    const x1 = (fx / 100) * w, y1 = (fy / 100) * h;
+    const x2 = (tx / 100) * w, y2 = (ty / 100) * h;
+    const cx = (x1 + x2) / 2 + (y2 - y1) * 0.12;
+    const cy = (y1 + y2) / 2 - (x2 - x1) * 0.12;
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`);
+    path.setAttribute('class', 'connection');
+    connectionsSvg.appendChild(path);
+    requestAnimationFrame(() => path.classList.add('show'));
+    setTimeout(() => path.classList.remove('show'), 5400);
+    setTimeout(() => path.remove(), 7200);
   }
 
   /* ---------- vault ---------- */
