@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ghostbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #000;
+    --candle: #ffb060;
+    --candle-warm: #ffd9a0;
+    --candle-soft: rgba(255, 176, 96, 0.18);
+    --candle-soft-2: rgba(255, 176, 96, 0.06);
+    --ink: #f4e3c4;
+    --ink-dim: rgba(244, 227, 196, 0.42);
+    --ink-faint: rgba(244, 227, 196, 0.18);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Cormorant Garamond', 'Iowan Old Style', Georgia, serif;
+    font-weight: 300;
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+    -webkit-font-smoothing: antialiased;
+    cursor: none;
+  }
+
+  @media (hover: none), (pointer: coarse) {
+    html, body { cursor: auto; }
+  }
+
+  /* ---------- intro ---------- */
+  #intro {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+    background: radial-gradient(ellipse at center, rgba(255, 176, 96, 0.04) 0%, transparent 60%), var(--bg);
+    transition: opacity 1.6s ease-out;
+  }
+
+  #intro.gone { opacity: 0; pointer-events: none; }
+
+  .intro-line {
+    opacity: 0;
+    font-size: clamp(1.1rem, 2.4vw, 1.5rem);
+    line-height: 1.5;
+    color: var(--ink);
+    max-width: 38rem;
+    letter-spacing: 0.02em;
+    margin-bottom: 1.4rem;
+    transition: opacity 1.4s ease-in-out;
+  }
+
+  .intro-line.visible { opacity: 1; }
+
+  .intro-line.title {
+    font-style: italic;
+    font-weight: 400;
+    font-size: clamp(2.4rem, 5.6vw, 3.8rem);
+    margin-bottom: 3rem;
+    letter-spacing: 0.04em;
+  }
+
+  .intro-enter {
+    opacity: 0;
+    margin-top: 2.5rem;
+    font-style: italic;
+    font-size: 1.1rem;
+    color: var(--ink-dim);
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    padding: 0.6rem 1.4rem;
+    border: 1px solid var(--ink-faint);
+    border-radius: 999px;
+    transition: opacity 1.4s ease-in-out, color 0.6s, border-color 0.6s, background 0.6s;
+  }
+
+  .intro-enter.visible { opacity: 1; }
+  .intro-enter:hover {
+    color: var(--candle-warm);
+    border-color: var(--candle-soft);
+    background: rgba(255, 176, 96, 0.04);
+  }
+
+  /* ---------- room ---------- */
+  #room {
+    position: fixed;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 2s ease-in;
+  }
+
+  #room.lit { opacity: 1; }
+
+  #cursor-light {
+    position: fixed;
+    width: 360px;
+    height: 360px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 200, 130, 0.16) 0%, rgba(255, 180, 110, 0.05) 35%, transparent 70%);
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    left: 50%;
+    top: 50%;
+    z-index: 5;
+    mix-blend-mode: screen;
+    transition: opacity 0.4s;
+  }
+
+  @media (hover: none), (pointer: coarse) {
+    #cursor-light { display: none; }
+  }
+
+  #cursor-flame {
+    position: fixed;
+    width: 3px;
+    height: 6px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, #fff5d8 0%, #ffb060 60%, transparent 100%);
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    left: 50%;
+    top: 50%;
+    z-index: 6;
+    box-shadow: 0 0 6px 1px rgba(255, 200, 130, 0.6);
+  }
+
+  @media (hover: none), (pointer: coarse) {
+    #cursor-flame { display: none; }
+  }
+
+  .candle {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+    z-index: 2;
+  }
+
+  .candle-glow {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--candle-soft) 0%, var(--candle-soft-2) 35%, transparent 65%);
+    pointer-events: none;
+    mix-blend-mode: screen;
+    opacity: 0.6;
+    transition: opacity 0.8s, transform 0.8s;
+  }
+
+  .candle-flame {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 3px;
+    height: 6px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, #fff5d8 0%, #ffb060 65%, transparent 100%);
+    box-shadow: 0 0 4px 1px rgba(255, 200, 130, 0.55);
+    animation: flicker 3.2s infinite ease-in-out;
+    pointer-events: none;
+  }
+
+  @keyframes flicker {
+    0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    25% { opacity: 0.92; transform: translate(-50%, -50%) scale(0.96); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
+    75% { opacity: 0.94; transform: translate(-50%, -50%) scale(0.98); }
+  }
+
+  .candle-want {
+    position: absolute;
+    left: 50%;
+    top: 38px;
+    transform: translateX(-50%);
+    width: clamp(200px, 22vw, 280px);
+    text-align: center;
+    font-size: 1.05rem;
+    line-height: 1.45;
+    color: var(--ink);
+    letter-spacing: 0.01em;
+    opacity: 0;
+    transition: opacity 0.9s ease;
+    pointer-events: none;
+    text-shadow: 0 0 18px rgba(0, 0, 0, 0.9);
+  }
+
+  .candle.near .candle-glow { opacity: 1; transform: translate(-50%, -50%) scale(1.18); }
+  .candle.near .candle-want { opacity: 1; }
+
+  .candle-heard {
+    display: block;
+    margin-top: 0.7rem;
+    font-size: 0.85rem;
+    font-style: italic;
+    color: var(--ink-dim);
+    letter-spacing: 0.06em;
+    pointer-events: auto;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.4s;
+  }
+
+  .candle.near .candle-heard { pointer-events: auto; }
+  .candle:not(.near) .candle-heard { pointer-events: none; }
+
+  .candle-heard:hover { color: var(--candle-warm); }
+  .candle.heard .candle-heard { color: var(--candle); font-style: normal; }
+  .candle.heard .candle-heard::before { content: "· "; }
+
+  .candle.mine .candle-flame {
+    background: radial-gradient(ellipse, #ffffff 0%, #ffd9a0 65%, transparent 100%);
+    box-shadow: 0 0 8px 2px rgba(255, 217, 160, 0.7);
+  }
+
+  .candle.mine .candle-want { color: var(--candle-warm); }
+
+  /* ---------- prompt ---------- */
+  #prompt {
+    position: fixed;
+    bottom: 2.6rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    text-align: center;
+    width: min(560px, 92vw);
+  }
+
+  #prompt-text {
+    display: inline-block;
+    font-style: italic;
+    font-size: 1.15rem;
+    color: var(--ink-dim);
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    padding: 0.6rem 1.4rem;
+    border-radius: 999px;
+    transition: color 0.5s, background 0.5s;
+  }
+
+  #prompt-text:hover {
+    color: var(--candle-warm);
+    background: rgba(255, 176, 96, 0.04);
+  }
+
+  #confession-form {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.9rem;
+  }
+
+  #confession-form.open { display: flex; }
+  #prompt.open #prompt-text { display: none; }
+
+  #confession {
+    width: 100%;
+    min-height: 90px;
+    background: rgba(255, 176, 96, 0.03);
+    border: 1px solid var(--candle-soft);
+    border-radius: 4px;
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 1.1rem;
+    font-weight: 300;
+    line-height: 1.5;
+    padding: 0.9rem 1.1rem;
+    resize: none;
+    outline: none;
+    transition: border-color 0.4s, background 0.4s;
+  }
+
+  #confession:focus {
+    border-color: var(--candle);
+    background: rgba(255, 176, 96, 0.05);
+  }
+
+  #confession::placeholder {
+    color: var(--ink-faint);
+    font-style: italic;
+  }
+
+  #confession-actions {
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+  }
+
+  .btn {
+    background: transparent;
+    border: 1px solid var(--ink-faint);
+    color: var(--ink-dim);
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-style: italic;
+    letter-spacing: 0.06em;
+    padding: 0.5rem 1.2rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: color 0.4s, border-color 0.4s, background 0.4s;
+  }
+
+  .btn:hover {
+    color: var(--candle-warm);
+    border-color: var(--candle-soft);
+    background: rgba(255, 176, 96, 0.04);
+  }
+
+  .btn.primary { color: var(--ink); }
+  .btn.primary:hover { color: var(--candle-warm); }
+
+  /* ---------- vault note ---------- */
+  #vault {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(2px);
+    text-align: center;
+    padding: 2rem;
+    opacity: 0;
+    transition: opacity 1.4s;
+  }
+
+  #vault.open { display: flex; opacity: 1; }
+
+  #vault-inner {
+    max-width: 32rem;
+    color: var(--ink);
+    font-size: clamp(1.05rem, 2vw, 1.25rem);
+    line-height: 1.65;
+    letter-spacing: 0.02em;
+  }
+
+  #vault-inner p { margin-bottom: 1.1rem; }
+  #vault-inner em { color: var(--candle-warm); font-style: italic; }
+  #vault-inner .close {
+    display: inline-block;
+    margin-top: 1.4rem;
+    color: var(--ink-dim);
+    font-style: italic;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    padding: 0.5rem 1.2rem;
+    border: 1px solid var(--ink-faint);
+    border-radius: 999px;
+    transition: color 0.4s, border-color 0.4s;
+  }
+  #vault-inner .close:hover { color: var(--candle-warm); border-color: var(--candle-soft); }
+
+  /* ---------- corner notes ---------- */
+  .corner {
+    position: fixed;
+    font-size: 0.78rem;
+    font-style: italic;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+    z-index: 8;
+    user-select: none;
+  }
+
+  .corner.top-left { top: 1.4rem; left: 1.6rem; }
+  .corner.top-right { top: 1.4rem; right: 1.6rem; }
+
+  @media (max-width: 600px) {
+    .corner.top-left, .corner.top-right { font-size: 0.7rem; }
+    #prompt { bottom: 1.4rem; }
+    .candle-want { font-size: 0.95rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="intro">
+  <div class="intro-line title" data-line="0">Ghostbook</div>
+  <div class="intro-line" data-line="1">you are a ghost here. so is everyone else.</div>
+  <div class="intro-line" data-line="2">we know you're real. nobody else does.</div>
+  <div class="intro-line" data-line="3">say what you want next.</div>
+  <div class="intro-line" data-line="4">your words live in a sealed vault for a year, then return only to you.</div>
+  <div class="intro-enter" id="enter">enter the room</div>
+</div>
+
+<div id="room">
+  <div class="corner top-left">Ghostbook</div>
+  <div class="corner top-right">invite only</div>
+
+  <div id="cursor-light"></div>
+  <div id="cursor-flame"></div>
+  <div id="candles"></div>
+
+  <div id="prompt">
+    <span id="prompt-text">what do you want next?</span>
+    <div id="confession-form">
+      <textarea id="confession" placeholder="what do you want next?" maxlength="280" rows="3"></textarea>
+      <div id="confession-actions">
+        <button class="btn" id="cancel">never mind</button>
+        <button class="btn primary" id="confess">light my candle</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="vault">
+  <div id="vault-inner">
+    <p>your candle is here.</p>
+    <p>its words are sealed for a year. nobody can read them. not the platform, not the other ghosts, not your friends.</p>
+    <p>in a year, they return <em>only to you</em>.</p>
+    <p>then they're gone.</p>
+    <span class="close" id="vault-close">walk back into the room</span>
+  </div>
+</div>
+
+<script>
+  const SEEDED = [
+    { x: 14, y: 28, want: "I want to leave my marriage. I don't know how to start the sentence." },
+    { x: 74, y: 20, want: "I want to be a mother. I'm 38. I've never said it out loud." },
+    { x: 44, y: 38, want: "I want to quit my job and learn to weld." },
+    { x: 22, y: 56, want: "I want my father to call me first. Just once." },
+    { x: 84, y: 42, want: "I want to write a book even though everyone I know would laugh." },
+    { x: 56, y: 60, want: "I want to be alone in a way that doesn't feel like failure." },
+    { x: 12, y: 78, want: "I want to fall in love again and not ruin it this time." },
+    { x: 88, y: 70, want: "I want to stop pretending I like what I do. I've been pretending eleven years." },
+    { x: 38, y: 82, want: "I want to forgive my mother. I don't actually want to." },
+    { x: 64, y: 80, want: "I want to live somewhere I can hear the ocean." },
+    { x: 32, y: 14, want: "I want to be touched without it meaning anything." },
+    { x: 70, y: 50, want: "I want to learn the names of every tree on my street." },
+  ];
+
+  const STORAGE_KEY = 'ghostbook.candles.v1';
+  const NEAR_PX = 200;
+
+  const intro = document.getElementById('intro');
+  const room = document.getElementById('room');
+  const candlesEl = document.getElementById('candles');
+  const cursorLight = document.getElementById('cursor-light');
+  const cursorFlame = document.getElementById('cursor-flame');
+  const promptEl = document.getElementById('prompt');
+  const promptText = document.getElementById('prompt-text');
+  const confessionForm = document.getElementById('confession-form');
+  const confessionField = document.getElementById('confession');
+  const confessBtn = document.getElementById('confess');
+  const cancelBtn = document.getElementById('cancel');
+  const vault = document.getElementById('vault');
+  const vaultClose = document.getElementById('vault-close');
+  const enterBtn = document.getElementById('enter');
+
+  /* ---------- intro sequence ---------- */
+  const lines = document.querySelectorAll('.intro-line');
+  let lineIdx = 0;
+
+  function showNextLine() {
+    if (lineIdx >= lines.length) {
+      enterBtn.classList.add('visible');
+      return;
+    }
+    lines[lineIdx].classList.add('visible');
+    lineIdx++;
+    setTimeout(showNextLine, lineIdx === 1 ? 1800 : 2200);
+  }
+
+  setTimeout(showNextLine, 700);
+
+  enterBtn.addEventListener('click', enterRoom);
+
+  function enterRoom() {
+    intro.classList.add('gone');
+    room.classList.add('lit');
+    setTimeout(() => { intro.style.display = 'none'; }, 1600);
+  }
+
+  /* ---------- candles ---------- */
+  let candles = [];
+
+  function loadMine() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      return Array.isArray(saved) ? saved : [];
+    } catch { return []; }
+  }
+
+  function saveMine(mine) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mine));
+  }
+
+  function buildRoom() {
+    candlesEl.innerHTML = '';
+    candles = [];
+
+    const all = [
+      ...SEEDED.map(c => ({ ...c, mine: false })),
+      ...loadMine(),
+    ];
+
+    all.forEach((c, i) => {
+      const el = document.createElement('div');
+      el.className = 'candle' + (c.mine ? ' mine' : '');
+      el.style.left = c.x + '%';
+      el.style.top = c.y + '%';
+      el.innerHTML = `
+        <div class="candle-glow"></div>
+        <div class="candle-flame"></div>
+        <div class="candle-want">${escapeHtml(c.want)}<span class="candle-heard">I heard you</span></div>
+      `;
+      candlesEl.appendChild(el);
+
+      const heard = el.querySelector('.candle-heard');
+      heard.addEventListener('click', (e) => {
+        e.stopPropagation();
+        el.classList.toggle('heard');
+        heard.textContent = el.classList.contains('heard') ? 'heard' : 'I heard you';
+      });
+
+      candles.push({ el, x: c.x, y: c.y, mine: !!c.mine });
+    });
+
+    updateProximity(window.innerWidth / 2, window.innerHeight / 2);
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, ch => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[ch]));
+  }
+
+  /* ---------- cursor proximity ---------- */
+  function updateProximity(px, py) {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    candles.forEach(c => {
+      const cx = (c.x / 100) * w;
+      const cy = (c.y / 100) * h;
+      const d = Math.hypot(px - cx, py - cy);
+      c.el.classList.toggle('near', d < NEAR_PX);
+    });
+  }
+
+  window.addEventListener('mousemove', (e) => {
+    cursorLight.style.left = e.clientX + 'px';
+    cursorLight.style.top = e.clientY + 'px';
+    cursorFlame.style.left = e.clientX + 'px';
+    cursorFlame.style.top = (e.clientY - 4) + 'px';
+    updateProximity(e.clientX, e.clientY);
+  });
+
+  /* mobile: tap to focus a candle */
+  const isTouch = matchMedia('(hover: none), (pointer: coarse)').matches;
+  if (isTouch) {
+    document.addEventListener('click', (e) => {
+      const candleEl = e.target.closest('.candle');
+      if (candleEl) {
+        candles.forEach(c => c.el.classList.toggle('near', c.el === candleEl));
+      } else if (!e.target.closest('#prompt') && !e.target.closest('#vault') && !e.target.closest('#intro')) {
+        candles.forEach(c => c.el.classList.remove('near'));
+      }
+    });
+  }
+
+  window.addEventListener('resize', () => {
+    updateProximity(window.innerWidth / 2, window.innerHeight / 2);
+  });
+
+  /* ---------- confession ---------- */
+  promptText.addEventListener('click', openConfession);
+
+  function openConfession() {
+    promptEl.classList.add('open');
+    confessionForm.classList.add('open');
+    setTimeout(() => confessionField.focus(), 50);
+  }
+
+  function closeConfession() {
+    promptEl.classList.remove('open');
+    confessionForm.classList.remove('open');
+    confessionField.value = '';
+  }
+
+  cancelBtn.addEventListener('click', closeConfession);
+
+  confessBtn.addEventListener('click', () => {
+    const text = confessionField.value.trim();
+    if (!text) return;
+    const mine = loadMine();
+    const pos = pickEmptySpot();
+    mine.push({ x: pos.x, y: pos.y, want: text, mine: true });
+    saveMine(mine);
+    closeConfession();
+    buildRoom();
+    setTimeout(openVault, 500);
+  });
+
+  function pickEmptySpot() {
+    const all = [...SEEDED, ...loadMine()];
+    let best = { x: 50, y: 50 }, bestMin = 0;
+    for (let i = 0; i < 80; i++) {
+      const x = 12 + Math.random() * 76;
+      const y = 16 + Math.random() * 70;
+      const minD = Math.min(...all.map(c => Math.hypot(c.x - x, c.y - y)));
+      if (minD > bestMin) { bestMin = minD; best = { x, y }; }
+      if (bestMin > 18) break;
+    }
+    return best;
+  }
+
+  /* ---------- vault ---------- */
+  function openVault() {
+    vault.classList.add('open');
+  }
+
+  vaultClose.addEventListener('click', () => vault.classList.remove('open'));
+
+  /* ---------- escape to dismiss ---------- */
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (vault.classList.contains('open')) vault.classList.remove('open');
+      else if (confessionForm.classList.contains('open')) closeConfession();
+    }
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && confessionForm.classList.contains('open')) {
+      confessBtn.click();
+    }
+  });
+
+  /* ---------- start ---------- */
+  buildRoom();
+</script>
+</body>
+</html>
