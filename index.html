@@ -479,22 +479,27 @@
 </div>
 
 <script>
-  const SEEDED = [
-    { id: 0, x: 16, y: 32, want: "I want to leave my marriage. I don't know how to start the sentence." },
-    { id: 1, x: 50, y: 30, want: "I want to be a mother. I'm 38. I've never said it out loud." },
-    { id: 2, x: 22, y: 12, want: "I want to quit my job and learn to weld." },
-    { id: 3, x: 14, y: 68, want: "I want my father to call me first. Just once." },
-    { id: 4, x: 62, y: 14, want: "I want to write a book even though everyone I know would laugh." },
-    { id: 5, x: 58, y: 48, want: "I want to be alone in a way that doesn't feel like failure." },
-    { id: 6, x: 80, y: 28, want: "I want to fall in love again and not ruin it this time." },
-    { id: 7, x: 10, y: 18, want: "I want to stop pretending I like what I do. I've been pretending eleven years." },
-    { id: 8, x: 28, y: 80, want: "I want to forgive my mother. I don't actually want to." },
-    { id: 9, x: 32, y: 24, want: "I want to live somewhere I can hear the ocean." },
-    { id: 10, x: 86, y: 50, want: "I want to be touched without it meaning anything." },
-    { id: 11, x: 70, y: 78, want: "I want to learn the names of every tree on my street." },
+  // Default 12 — used until /api/room returns the personalized room.
+  // IDs match the server-side pool; positions kept stable so existing
+  // user candles keep their stored coordinates.
+  let SEEDED = [
+    { id: 0,  x: 16, y: 30, want: "I want to leave my marriage. I don't know how to start the sentence." },
+    { id: 10, x: 50, y: 30, want: "I want to be a mother. I'm 38. I've never said it out loud." },
+    { id: 1,  x: 22, y: 12, want: "I want to quit my job and learn to weld." },
+    { id: 25, x: 14, y: 68, want: "I want my father to call me first. Just once." },
+    { id: 11, x: 60, y: 16, want: "I want to write a book even though everyone I know would laugh." },
+    { id: 12, x: 52, y: 44, want: "I want to be alone in a way that doesn't feel like failure." },
+    { id: 18, x: 78, y: 28, want: "I want to fall in love again and not ruin it this time." },
+    { id: 2,  x: 10, y: 18, want: "I want to stop pretending I like what I do. I've been pretending eleven years." },
+    { id: 26, x: 28, y: 80, want: "I want to forgive my mother. I don't actually want to." },
+    { id: 3,  x: 32, y: 24, want: "I want to live somewhere I can hear the ocean." },
+    { id: 19, x: 88, y: 50, want: "I want to be touched without it meaning anything." },
+    { id: 31, x: 70, y: 78, want: "I want to learn the names of every tree on my street." },
   ];
 
-  const STORAGE_KEY = 'ghostbook.candles.v1';
+  // Bumped from v1: old saved candles' nearestId values referenced the v2
+  // 12-seed scheme, which no longer matches the 50-want pool's IDs.
+  const STORAGE_KEY = 'ghostbook.candles.v3';
   const NEAR_PX = 200;
 
   const intro = document.getElementById('intro');
@@ -660,7 +665,7 @@
       const r = await fetch('/api/embed', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, roomIds: SEEDED.map(s => s.id) }),
       });
       if (!r.ok) throw new Error('embed failed');
       placement = await r.json();
@@ -742,8 +747,28 @@
     }
   });
 
+  /* ---------- personalized room ---------- */
+  async function fetchPersonalRoom() {
+    try {
+      const mine = loadMine();
+      const history = mine.map(m => m.want).filter(Boolean);
+      const r = await fetch('/api/room', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ history }),
+      });
+      if (!r.ok) return;
+      const data = await r.json();
+      if (data.wants && Array.isArray(data.wants) && data.wants.length > 0) {
+        SEEDED = data.wants;
+        buildRoom();
+      }
+    } catch { /* keep default SEEDED */ }
+  }
+
   /* ---------- start ---------- */
   buildRoom();
+  fetchPersonalRoom();
 </script>
 </body>
 </html>
