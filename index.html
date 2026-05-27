@@ -421,9 +421,22 @@
 
   .corner.top-left { top: 1.4rem; left: 1.6rem; }
   .corner.top-right { top: 1.4rem; right: 1.6rem; }
+  .corner.bottom-left { bottom: 1.4rem; left: 1.6rem; }
+  .corner.bottom-right { bottom: 1.4rem; right: 1.6rem; }
+
+  a.corner.door {
+    text-decoration: none;
+    transition: color 0.5s;
+  }
+  a.corner.door:hover { color: var(--candle-warm); }
+  a.corner.door::after { content: " →"; opacity: 0.5; }
 
   @media (max-width: 600px) {
     .corner.top-left, .corner.top-right { font-size: 0.7rem; }
+    .corner.bottom-left, .corner.bottom-right {
+      bottom: 5rem;
+      font-size: 0.7rem;
+    }
     #prompt { bottom: 1.4rem; }
     .candle-want { font-size: 0.95rem; }
   }
@@ -451,6 +464,8 @@
 <div id="room">
   <div class="corner top-left">Ghostbook</div>
   <div class="corner top-right">invite only</div>
+  <a class="corner bottom-left door" href="/why">why we're here</a>
+  <a class="corner bottom-right door" href="/done">done. daily</a>
 
   <svg id="connections"></svg>
   <div id="cursor-light"></div>

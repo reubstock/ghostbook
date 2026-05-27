@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Why We're Here · Ghostbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #000;
+    --candle: #ffb060;
+    --candle-warm: #ffd9a0;
+    --ink: #f4e3c4;
+    --ink-dim: rgba(244, 227, 196, 0.55);
+    --ink-faint: rgba(244, 227, 196, 0.2);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Cormorant Garamond', 'Iowan Old Style', Georgia, serif;
+    font-weight: 300;
+    min-height: 100%;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  html, body, * { cursor: none; }
+
+  @media (hover: none), (pointer: coarse) {
+    html, body, * { cursor: auto !important; }
+  }
+
+  body {
+    background: radial-gradient(ellipse at center top, rgba(255, 176, 96, 0.05) 0%, transparent 55%), var(--bg);
+    padding: 7rem 1.6rem 12rem;
+  }
+
+  /* ---------- cursor ---------- */
+  #cursor-ghost {
+    position: fixed;
+    width: 22px;
+    height: 26px;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    left: -100px;
+    top: -100px;
+    z-index: 200;
+    filter: drop-shadow(0 0 8px rgba(255, 200, 130, 0.55));
+    opacity: 0;
+    transition: opacity 0.6s ease;
+  }
+  #cursor-ghost.lit { opacity: 1; }
+  #cursor-ghost svg { display: block; width: 100%; height: 100%; }
+  @media (hover: none), (pointer: coarse) {
+    #cursor-ghost { display: none; }
+  }
+
+  /* ---------- corners ---------- */
+  .corner {
+    position: fixed;
+    font-size: 0.78rem;
+    font-style: italic;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+    z-index: 8;
+    user-select: none;
+    text-decoration: none;
+    transition: color 0.5s;
+  }
+  .corner.top-left { top: 1.4rem; left: 1.6rem; }
+  .corner.top-right { top: 1.4rem; right: 1.6rem; }
+  a.corner:hover { color: var(--candle-warm); }
+  a.corner.back::before { content: "← "; opacity: 0.5; }
+
+  @media (max-width: 600px) {
+    .corner { font-size: 0.7rem; }
+  }
+
+  /* ---------- manifesto ---------- */
+  #manifesto {
+    max-width: 38rem;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2.4rem;
+  }
+
+  .line {
+    text-align: center;
+    font-size: clamp(1.2rem, 2.6vw, 1.6rem);
+    line-height: 1.5;
+    letter-spacing: 0.015em;
+    color: var(--ink);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 1s ease, transform 1s ease;
+    text-shadow: 0 0 22px rgba(0, 0, 0, 0.9);
+  }
+  .line.visible { opacity: 1; transform: translateY(0); }
+  .line.seeded { color: var(--ink); }
+  .line.contribution { color: var(--ink); }
+  .line.mine {
+    color: var(--candle-warm);
+    font-style: italic;
+  }
+
+  /* ---------- prompt ---------- */
+  #prompt {
+    position: fixed;
+    bottom: 2.6rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    width: min(560px, 92vw);
+    text-align: center;
+    opacity: 0;
+    transition: opacity 1.6s ease;
+  }
+  #prompt.visible { opacity: 1; }
+
+  #prompt-text {
+    display: inline-block;
+    font-style: italic;
+    font-size: 1.15rem;
+    color: var(--ink-dim);
+    letter-spacing: 0.04em;
+    padding: 0.6rem 1.4rem;
+    border-radius: 999px;
+    transition: color 0.5s, background 0.5s;
+  }
+  #prompt-text:hover {
+    color: var(--candle-warm);
+    background: rgba(255, 176, 96, 0.04);
+  }
+
+  #form {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.9rem;
+  }
+  #form.open { display: flex; }
+  #prompt.open #prompt-text { display: none; }
+
+  #reason {
+    width: 100%;
+    min-height: 78px;
+    background: rgba(255, 176, 96, 0.03);
+    border: 1px solid rgba(255, 176, 96, 0.18);
+    border-radius: 4px;
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 1.1rem;
+    font-weight: 300;
+    line-height: 1.5;
+    padding: 0.9rem 1.1rem;
+    resize: none;
+    outline: none;
+    transition: border-color 0.4s, background 0.4s;
+  }
+  #reason:focus {
+    border-color: var(--candle);
+    background: rgba(255, 176, 96, 0.05);
+  }
+  #reason::placeholder {
+    color: var(--ink-faint);
+    font-style: italic;
+  }
+
+  .actions { display: flex; gap: 0.8rem; }
+  .btn {
+    background: transparent;
+    border: 1px solid var(--ink-faint);
+    color: var(--ink-dim);
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-style: italic;
+    letter-spacing: 0.06em;
+    padding: 0.5rem 1.2rem;
+    border-radius: 999px;
+    transition: color 0.4s, border-color 0.4s, background 0.4s;
+  }
+  .btn:hover {
+    color: var(--candle-warm);
+    border-color: rgba(255, 176, 96, 0.3);
+    background: rgba(255, 176, 96, 0.04);
+  }
+  .btn.primary { color: var(--ink); }
+
+  #ack {
+    text-align: center;
+    font-style: italic;
+    color: var(--candle-warm);
+    font-size: 1rem;
+    margin-top: 0.6rem;
+    opacity: 0;
+    transition: opacity 1.2s ease;
+  }
+  #ack.visible { opacity: 1; }
+
+  @media (max-width: 600px) {
+    body { padding: 5rem 1.2rem 10rem; }
+    #manifesto { gap: 1.8rem; }
+    .line { font-size: 1.1rem; }
+    #prompt { bottom: 1.4rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="cursor-ghost" aria-hidden="true">
+  <svg viewBox="0 0 24 28" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 12 1 C 5 1 3 5 3 12 L 3 22 Q 5.25 26 7.5 22 Q 9.75 26 12 22 Q 14.25 26 16.5 22 Q 18.75 26 21 22 L 21 12 C 21 5 19 1 12 1 Z" fill="rgba(255, 220, 170, 0.92)"/>
+    <ellipse cx="9" cy="12" rx="1.2" ry="1.6" fill="rgba(30, 15, 0, 0.75)"/>
+    <ellipse cx="15" cy="12" rx="1.2" ry="1.6" fill="rgba(30, 15, 0, 0.75)"/>
+  </svg>
+</div>
+
+<a class="corner top-left back" href="/">Ghostbook</a>
+<div class="corner top-right">why we're here</div>
+
+<div id="manifesto"></div>
+
+<div id="prompt">
+  <span id="prompt-text">why are you here?</span>
+  <div id="form">
+    <textarea id="reason" placeholder="why are you here?" maxlength="200" rows="2"></textarea>
+    <div class="actions">
+      <button class="btn" id="cancel">never mind</button>
+      <button class="btn primary" id="submit">leave my reason</button>
+    </div>
+    <div id="ack"></div>
+  </div>
+</div>
+
+<script>
+  const manifesto = document.getElementById('manifesto');
+  const cursorGhost = document.getElementById('cursor-ghost');
+  const promptEl = document.getElementById('prompt');
+  const promptText = document.getElementById('prompt-text');
+  const form = document.getElementById('form');
+  const reason = document.getElementById('reason');
+  const submitBtn = document.getElementById('submit');
+  const cancelBtn = document.getElementById('cancel');
+  const ack = document.getElementById('ack');
+
+  /* ---------- cursor ---------- */
+  window.addEventListener('mousemove', (e) => {
+    cursorGhost.style.left = e.clientX + 'px';
+    cursorGhost.style.top = e.clientY + 'px';
+    if (!cursorGhost.classList.contains('lit')) cursorGhost.classList.add('lit');
+  });
+
+  /* ---------- escape ---------- */
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && form.classList.contains('open')) closeForm();
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && form.classList.contains('open')) submitBtn.click();
+  });
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, ch => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[ch]));
+  }
+
+  /* ---------- render the manifesto with stagger ---------- */
+  function addLine(text, opts = {}) {
+    const el = document.createElement('div');
+    el.className = 'line' + (opts.seeded ? ' seeded' : ' contribution') + (opts.mine ? ' mine' : '');
+    el.textContent = text;
+    manifesto.appendChild(el);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => el.classList.add('visible'));
+    });
+    return el;
+  }
+
+  async function loadAndReveal() {
+    let seeded = [];
+    let contributions = [];
+    try {
+      const r = await fetch('/api/why');
+      if (r.ok) {
+        const data = await r.json();
+        seeded = data.seeded || [];
+        contributions = data.contributions || [];
+      }
+    } catch {}
+
+    const all = [...seeded.map(t => ({ text: t, seeded: true })),
+                 ...contributions.map(t => ({ text: t, seeded: false }))];
+
+    // Reveal each line on a stagger
+    for (let i = 0; i < all.length; i++) {
+      addLine(all[i].text, { seeded: all[i].seeded });
+      await sleep(i === 0 ? 600 : 700);
+    }
+
+    // Then the prompt
+    await sleep(500);
+    promptEl.classList.add('visible');
+  }
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  /* ---------- form ---------- */
+  promptText.addEventListener('click', openForm);
+  cancelBtn.addEventListener('click', closeForm);
+
+  function openForm() {
+    promptEl.classList.add('open');
+    form.classList.add('open');
+    setTimeout(() => reason.focus(), 50);
+  }
+
+  function closeForm() {
+    promptEl.classList.remove('open');
+    form.classList.remove('open');
+    reason.value = '';
+  }
+
+  submitBtn.addEventListener('click', async () => {
+    const text = reason.value.trim();
+    if (!text) return;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'leaving your reason…';
+
+    let saved = false;
+    try {
+      const r = await fetch('/api/why', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      });
+      if (r.ok) {
+        const data = await r.json();
+        saved = !!data.saved;
+      }
+    } catch {}
+
+    addLine(text, { mine: true });
+
+    // Acknowledgment
+    closeForm();
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'leave my reason';
+    promptText.style.display = 'none';
+    ack.textContent = saved
+      ? 'your reason joins the others.'
+      : 'your reason is here, in this room.';
+    ack.classList.add('visible');
+  });
+
+  /* ---------- start ---------- */
+  loadAndReveal();
+</script>
+</body>
+</html>
