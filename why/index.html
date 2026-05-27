@@ -73,11 +73,32 @@
   }
   .corner.top-left { top: 1.4rem; left: 1.6rem; }
   .corner.top-right { top: 1.4rem; right: 1.6rem; }
-  a.corner:hover { color: var(--candle-warm); }
-  a.corner.back::before { content: "← "; opacity: 0.5; }
+
+  a.corner.back {
+    font-size: 0.9rem;
+    font-style: normal;
+    letter-spacing: 0.1em;
+    color: var(--ink-dim);
+    padding: 0.5rem 1.05rem;
+    border: 1px solid rgba(244, 227, 196, 0.2);
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.4);
+    transition: color 0.4s, border-color 0.4s, background 0.4s;
+  }
+  a.corner.back:hover {
+    color: var(--candle-warm);
+    border-color: rgba(255, 176, 96, 0.45);
+    background: rgba(255, 176, 96, 0.06);
+  }
+  a.corner.back::before {
+    content: "← ";
+    opacity: 0.6;
+    margin-right: 0.2rem;
+  }
 
   @media (max-width: 600px) {
     .corner { font-size: 0.7rem; }
+    a.corner.back { font-size: 0.78rem; padding: 0.4rem 0.85rem; }
   }
 
   /* ---------- manifesto ---------- */
