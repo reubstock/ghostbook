@@ -98,11 +98,18 @@
   }
 
   .door-icon {
-    width: 14px;
-    height: 19px;
+    width: 22px;
+    height: 30px;
     display: block;
     color: var(--candle-warm);
     flex-shrink: 0;
+    filter: drop-shadow(0 0 6px rgba(255, 176, 96, 0.25));
+  }
+
+  .intro-line.closing {
+    font-style: italic;
+    color: var(--candle-warm);
+    margin-bottom: 2.2rem;
   }
 
   /* ---------- room ---------- */
@@ -489,10 +496,13 @@
   <div class="intro-line" data-line="2">we know you're real. nobody else does.</div>
   <div class="intro-line" data-line="3">say what you want next.</div>
   <div class="intro-line" data-line="4">your words live in a sealed vault for a year, then return only to you.</div>
+  <div class="intro-line closing" data-line="5">All truth is a one-way door.</div>
   <div class="intro-enter" id="enter">
-    <svg class="door-icon" viewBox="0 0 16 22" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <rect x="2" y="2" width="12" height="20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
-      <circle cx="11" cy="12" r="0.9" fill="currentColor"/>
+    <svg class="door-icon" viewBox="0 0 20 28" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="1.5" y="1.5" width="17" height="25" fill="rgba(255, 176, 96, 0.18)" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+      <rect x="4.5" y="4.5" width="11" height="8" fill="none" stroke="currentColor" stroke-width="0.9" opacity="0.55"/>
+      <rect x="4.5" y="15.5" width="11" height="9" fill="none" stroke="currentColor" stroke-width="0.9" opacity="0.55"/>
+      <circle cx="15.6" cy="14" r="1.1" fill="currentColor"/>
     </svg>
     <span>enter the room</span>
   </div>
